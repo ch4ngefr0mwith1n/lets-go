@@ -7,7 +7,6 @@ import (
 
 func home(w http.ResponseWriter, r *http.Request) {
 	// "/" putanja ne treba da "hvata" sve zahtjeve
-	// zbog toga ćemo
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
