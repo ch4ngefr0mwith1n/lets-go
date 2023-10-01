@@ -1,11 +1,17 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 )
 
 func main() {
+	// kreiranje "command line flag"-a
+	addr := flag.String("addr", "127.0.0.1:4000", "HTTP network address")
+	// parsiranje flag-a
+	flag.Parse()
+
 	mux := http.NewServeMux()
 
 	// kreiranje "file" servera - za fajlove iz "ui/static" foldera
@@ -19,10 +25,9 @@ func main() {
 	mux.HandleFunc("/snippet/view", snippetView)
 	mux.HandleFunc("/snippet/create", snippetCreate)
 
-	log.Println("Starting server on port :4000 ")
-
 	// pokretanje servera
-	// u parametre idu adresa i router
-	err := http.ListenAndServe("127.0.0.1:4000", mux)
+	log.Printf("Starting server on port %s", *addr)
+	// u parametre idu adresa iz "flag"-a i router
+	err := http.ListenAndServe(*addr, mux)
 	log.Fatal(err)
 }
