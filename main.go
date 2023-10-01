@@ -11,6 +11,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+
 	w.Write([]byte("Hello from snippetbox!"))
 }
 
@@ -19,6 +20,17 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func snippetCreate(w http.ResponseWriter, r *http.Request) {
+	// po default-u, "status code" koji se šalje je "200 OK"
+	if r.Method != "POST" {
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		//http.Error(w, "Method not allowed", 405)
+
+		//w.WriteHeader(405)
+		//w.Write([]byte("Method not allowed!"))
+		return
+	}
+
 	w.Write([]byte("Creating a new snippet..."))
 }
 
