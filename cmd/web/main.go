@@ -18,6 +18,6 @@ func main() {
 
 	// pokretanje servera
 	// u parametre idu adresa i router
-	err := http.ListenAndServe(":4000", mux)
+	err := http.ListenAndServe("127.0.0.1:4000", mux)
 	log.Fatal(err)
 }
