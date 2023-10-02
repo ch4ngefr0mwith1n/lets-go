@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -39,7 +40,7 @@ func main() {
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
 	// logger obavještava da će server biti pokrenut
-	logger.Info("Starting server on port %s", *addr)
+	logger.Info(fmt.Sprintf("Starting server on port %s", *addr))
 	// u parametre idu adresa iz "flag"-a i router
 	err := http.ListenAndServe(*addr, mux)
 	// u slučaju da se desi neka greška - aplikacija će biti izgašena

@@ -24,9 +24,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// "variadic" argumenti
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		// pristupanje polju "application" struct-a:
-		app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
-		http.Error(w, "Internal server error!", http.StatusInternalServerError)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -34,7 +32,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		// opet pristupamo polju "application" struct-a:
-		app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
+		app.serverError(w, r, err)
 		http.Error(w, "Internal server error!", http.StatusInternalServerError)
 	}
 }
@@ -44,7 +42,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// vadi se vrijednost "id" parametra iz URL-a
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		http.NotFound(w, r)
+		app.notFound(w)
 	}
 
 	// ova funkcija prima "io.writer" interfejs
@@ -57,11 +55,7 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// po default-u, "status code" koji se šalje je "200 OK"
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		//http.Error(w, "Method not allowed", 405)
-
-		//w.WriteHeader(405)
-		//w.Write([]byte("Method not allowed!"))
+		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
 
