@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -11,6 +12,10 @@ func main() {
 	addr := flag.String("addr", "127.0.0.1:4000", "HTTP network address")
 	// parsiranje flag-a
 	flag.Parse()
+
+	// kreiranje novog "structured" logger-a
+	// ukoliko želimo da se log čuva u nekom fajlu, onda pokrećemo aplikaciju preko "go run ./cmd/web >>/tmp/web.log"
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	mux := http.NewServeMux()
 
@@ -25,9 +30,11 @@ func main() {
 	mux.HandleFunc("/snippet/view", snippetView)
 	mux.HandleFunc("/snippet/create", snippetCreate)
 
-	// pokretanje servera
-	log.Printf("Starting server on port %s", *addr)
+	// logger obavještava da će server biti pokrenut
+	logger.Info("Starting server on port %s", *addr)
 	// u parametre idu adresa iz "flag"-a i router
 	err := http.ListenAndServe(*addr, mux)
-	log.Fatal(err)
+	// u slučaju da se desi neka greška - aplikacija će biti izgašena
+	logger.Error(err.Error())
+	os.Exit(1)
 }
