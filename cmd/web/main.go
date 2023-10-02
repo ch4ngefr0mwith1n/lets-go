@@ -26,23 +26,10 @@ func main() {
 		logger: logger,
 	}
 
-	mux := http.NewServeMux()
-
-	// kreiranje "file" servera - za fajlove iz "ui/static" foldera
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	// sada je "file" server uvezan sa handler-om, koji pokriva sve putanje koje počinju sa "/static/"
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-
-	mux.HandleFunc("/", app.home)
-	// obje naredne putanje su fiksne putanje
-	// ne završavaju se sa "/"
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
-
 	// logger obavještava da će server biti pokrenut
 	logger.Info(fmt.Sprintf("Starting server on port %s", *addr))
 	// u parametre idu adresa iz "flag"-a i router
-	err := http.ListenAndServe(*addr, mux)
+	err := http.ListenAndServe(*addr, app.routes())
 	// u slučaju da se desi neka greška - aplikacija će biti izgašena
 	logger.Error(err.Error())
 	os.Exit(1)
