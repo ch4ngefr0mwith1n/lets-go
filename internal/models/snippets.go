@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 )
 
@@ -28,8 +29,42 @@ type SnippetModel struct {
 }
 
 func (m *SnippetModel) Get(id int) (Snippet, error) {
-	var snippet Snippet
-	return snippet, nil
+
+	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > UTC_TIMESTAMP() AND id = ?`
+	row := m.DB.QueryRow(stmt, id)
+
+	var s Snippet
+
+	// metodu "row.Scan()" koristimo da kopiramo vrijednosti iz "sql.Row" polja u odgovarajuće polje u "Snippet" struct-u
+	// parametri ove metode su "pointer"-i ka mjestima gdje želimo da iskopiramo vrijednosti
+	// broj argumenata mora biti isti kao i broj kolona koje naredba vraća
+	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	if err != nil {
+		// ukoliko "query" ne vraća nijedan red, onda će se vratiti "custom" greška - koju smo definisali u "models/errors.go"
+		if errors.Is(err, sql.ErrNoRows) {
+			return Snippet{}, ErrNoRecord
+		} else {
+			return Snippet{}, err
+		}
+	}
+
+	return s, nil
+}
+
+// skraćena verzija ove metode iznad:
+func (m *SnippetModel) GetShorthand(id int) (Snippet, error) {
+	var s Snippet
+
+	err := m.DB.QueryRow("SELECT ...", id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Snippet{}, ErrNoRecord
+		} else {
+			return Snippet{}, err
+		}
+	}
+
+	return s, nil
 }
 
 func (m *SnippetModel) Latest() ([]Snippet, error) {
