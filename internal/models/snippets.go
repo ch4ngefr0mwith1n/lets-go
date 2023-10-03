@@ -21,6 +21,8 @@ type Snippet struct {
 	Expires time.Time
 }
 
+// deklarisanjem ovog tipa i implementiranjem metoda nad njim - imamo jedan enkapsulirani objekat
+// lako možemo da ga inicijalizujemo i nakon toga, da proslijedimo u "handler"-e kao zavisnost
 type SnippetModel struct {
 	DB *sql.DB
 }
