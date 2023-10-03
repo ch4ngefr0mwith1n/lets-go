@@ -12,10 +12,15 @@ import (
 	// potreban nam je ovaj import radi "init" funkcije sadržane unutar njega
 	// "_" je alias, moramo da ga koristimo jer ovaj paket nigdje eksplicitno ne koristimo
 	_ "github.com/go-sql-driver/mysql"
+
+	"snippetbox.lazarmrkic.com/internal/models"
 )
 
 type application struct {
 	logger *slog.Logger
+	// dodavanje "snippets" polja u "application" struct
+	// to će omogućiti da "SnippetModel" objekat bude dostupan kontrolerima
+	snippets *models.SnippetModel
 }
 
 // funkcija za inicijalizovanje "connection pool"-a
@@ -52,12 +57,14 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-
 	// "connection pool" treba da se zatvori prije izlaska iz "main()" funkcije
 	defer db.Close()
 
 	app := &application{
 		logger: logger,
+		// inicijalizovanje "models.SnippetModel" instance, koja sadrži "connection pool"
+		// nakon toga, dodajemo je u zavisnosti aplikacije
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	// logger obavještava da će server biti pokrenut
