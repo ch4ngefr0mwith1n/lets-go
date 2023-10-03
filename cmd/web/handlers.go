@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
+	"snippetbox.lazarmrkic.com/internal/models"
 	"strconv"
 )
 
@@ -45,9 +47,17 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 	}
 
-	// ova funkcija prima "io.writer" interfejs
-	// "http.ResponseWriter" zadovoljava uslove ovog interfejsa
-	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+	snippet, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	fmt.Fprintf(w, "%+v", snippet)
 }
 
 // "snippetCreate" handler će postati metoda "application" struct-a:
