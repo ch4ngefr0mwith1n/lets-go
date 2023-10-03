@@ -37,5 +37,22 @@ func (m *SnippetModel) Latest() ([]Snippet, error) {
 }
 
 func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {
-	return 0, nil
+	stmt := `INSERT INTO snippets (title, content, created, expires)
+    VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
+
+	// "Exec()" metoda se koristi nad "connection pool"-om, kako bi smo izvršili naredbu
+	// ona će vratiti "sql.Result" tip, koji sadrži informacije o izvršavanju naredbe
+	result, err := m.DB.Exec(stmt, title, content, expires)
+	if err != nil {
+		return 0, err
+	}
+
+	// "id" koji generiše baza nakon izvršavanja komande
+	// ovaj "id" će generisati "auto increment" kolona
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return int(id), nil
 }
