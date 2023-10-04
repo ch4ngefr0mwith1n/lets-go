@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
@@ -21,6 +22,8 @@ type application struct {
 	// dodavanje "snippets" polja u "application" struct
 	// to će omogućiti da "SnippetModel" objekat bude dostupan kontrolerima
 	snippets *models.SnippetModel
+	// dodavanje templateCache polja
+	templateCache map[string]*template.Template
 }
 
 // funkcija za inicijalizovanje "connection pool"-a
@@ -60,11 +63,20 @@ func main() {
 	// "connection pool" treba da se zatvori prije izlaska iz "main()" funkcije
 	defer db.Close()
 
+	// inicijalizovanje novog "template cache"-a:
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	app := &application{
 		logger: logger,
 		// inicijalizovanje "models.SnippetModel" instance, koja sadrži "connection pool"
 		// nakon toga, dodajemo je u zavisnosti aplikacije
 		snippets: &models.SnippetModel{DB: db},
+		// inicijalizovanje "template cache"-a
+		templateCache: templateCache,
 	}
 
 	// logger obavještava da će server biti pokrenut
