@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"time"
 )
 
 // "serverError" piše "log entry" na "Error" nivou
@@ -31,6 +32,15 @@ func (app *application) clientError(w http.ResponseWriter, status int) {
 // varijacija "clientError"-a, koja šalje "404 Not Found" odgovor ka klijentu
 func (app *application) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
+}
+
+// Create an newTemplateData() helper, which returns a pointer to a templateData
+// struct initialized with the current year. Note that we're not using the
+// *http.Request parameter here at the moment, but we will do later in the book.
+func (app *application) newTemplateData(r *http.Request) templateData {
+	return templateData{
+		CurrentYear: time.Now().Year(),
+	}
 }
 
 func (app *application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {

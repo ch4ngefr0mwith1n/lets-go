@@ -8,8 +8,9 @@ import (
 
 // "templateData" će biti "struct" koji sadrži sve dinamičke podatke koje prosljeđujemo ka HTML templejtima
 type templateData struct {
-	Snippet  models.Snippet
-	Snippets []models.Snippet
+	CurrentYear int
+	Snippet     models.Snippet
+	Snippets    []models.Snippet
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

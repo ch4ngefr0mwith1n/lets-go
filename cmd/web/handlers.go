@@ -22,27 +22,14 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//files := []string{
-	//	"./ui/html/base.tmpl",
-	//	"./ui/html/partials/nav.tmpl",
-	//	"./ui/html/pages/home.tmpl",
-	//}
-	//
-	//ts, err := template.ParseFiles(files...)
-	//if err != nil {
-	//	app.serverError(w, r, err)
-	//	return
-	//}
-	//
-	//data := templateData{Snippets: snippets}
-	//
-	//err = ts.ExecuteTemplate(w, "base", data)
-	//if err != nil {
-	//	app.serverError(w, r, err)
-	//}
-	app.render(w, r, http.StatusOK, "home.tmpl", templateData{
-		Snippets: snippets,
-	})
+	// Call the newTemplateData() helper to get a templateData struct containing
+	// the 'default' data (which for now is just the current year), and add the
+	// snippets slice to it.
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
+
+	// Pass the data to the render() helper as normal.
+	app.render(w, r, http.StatusOK, "home.tmpl", data)
 }
 
 // "snippetView" handler će postati metoda "application" struct-a:
@@ -64,27 +51,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//files := []string{
-	//	"./ui/html/base.tmpl",
-	//	"./ui/html/partials/nav.tmpl",
-	//	"./ui/html/pages/view.tmpl",
-	//}
-	//
-	//ts, err := template.ParseFiles(files...)
-	//if err != nil {
-	//	app.serverError(w, r, err)
-	//	return
-	//}
-	//
-	//data := templateData{Snippet: snippet}
-	//
-	//err = ts.ExecuteTemplate(w, "base", data)
-	//if err != nil {
-	//	app.serverError(w, r, err)
-	//}
-	app.render(w, r, http.StatusOK, "view.tmpl", templateData{
-		Snippet: snippet,
-	})
+	data := app.newTemplateData(r)
+	data.Snippet = snippet
+
+	app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
 
 // "snippetCreate" handler će postati metoda "application" struct-a:
