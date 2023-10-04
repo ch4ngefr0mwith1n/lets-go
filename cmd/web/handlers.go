@@ -13,7 +13,7 @@ import (
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// "/" putanja ne treba da "hvata" sve zahtjeve
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 
@@ -23,30 +23,24 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, snippet := range snippets {
-		fmt.Fprintf(w, "+v\n", snippet)
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/partials/nav.tmpl",
+		"./ui/html/pages/home.tmpl",
 	}
 
-	//files := []string{
-	//	"./ui/html/base.tmpl",
-	//	"./ui/html/pages/home.tmpl",
-	//	"./ui/html/partials/nav.tmpl",
-	//}
-	//
-	//// "variadic" argumenti
-	//ts, err := template.ParseFiles(files...)
-	//if err != nil {
-	//	app.serverError(w, r, err)
-	//	return
-	//}
-	//
-	//// "execute" metoda upisuje sadržaj templejta u "body" unutar odgovora
-	//err = ts.ExecuteTemplate(w, "base", nil)
-	//if err != nil {
-	//	// opet pristupamo polju "application" struct-a:
-	//	app.serverError(w, r, err)
-	//	http.Error(w, "Internal server error!", http.StatusInternalServerError)
-	//}
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	data := templateData{Snippets: snippets}
+
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+	}
 }
 
 // "snippetView" handler će postati metoda "application" struct-a:
