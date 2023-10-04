@@ -55,7 +55,8 @@ func (m *SnippetModel) Get(id int) (Snippet, error) {
 func (m *SnippetModel) GetShorthand(id int) (Snippet, error) {
 	var s Snippet
 
-	err := m.DB.QueryRow("SELECT ...", id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	err := m.DB.QueryRow(`SELECT id, title, content, created, expires FROM snippets WHERE expires > UTC_TIMESTAMP() AND id = ?`, id).
+		Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Snippet{}, ErrNoRecord
@@ -68,7 +69,38 @@ func (m *SnippetModel) GetShorthand(id int) (Snippet, error) {
 }
 
 func (m *SnippetModel) Latest() ([]Snippet, error) {
-	return nil, nil
+	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10`
+
+	// "Query" metoda će vratiti više redova odjednom
+	// odnosno, vratiće "sql.Rows" resultset
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	// "sql.Rows" resultset treba da bude zatvoren
+	defer rows.Close()
+
+	var snippets []Snippet
+	for rows.Next() {
+		var s Snippet
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+
+		if err != nil {
+			return nil, err
+		}
+
+		// dodavanje popunjenih "Snippet" instanci u "snippets" slice
+		snippets = append(snippets, s)
+	}
+
+	// nakon završetka "rows.Next()" petlje, provjeravamo da li su se desile greške tokom iteracije
+	// ovo je veoma bitan korak, jer nekad radimo sa ogromnim resultset-ovima
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return snippets, nil
 }
 
 func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {
