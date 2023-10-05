@@ -38,7 +38,7 @@ func (app *application) routes() http.Handler {
 	// obje naredne putanje su fiksne putanje
 	// ne završavaju se sa "/"
 	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
-	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreatePost)
+	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
 	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
 
 	// izvršavanje svih "middleware"-a dok se ne dođe do "router"-a
