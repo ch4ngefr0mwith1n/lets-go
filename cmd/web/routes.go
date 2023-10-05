@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"net/http"
 )
@@ -20,18 +21,25 @@ import (
 
 // povratna vrijednost "routes()" metode sada treba da bude "http.Handler"
 func (app *application) routes() http.Handler {
-	mux := http.NewServeMux()
+	router := httprouter.New()
+
+	// kreira se "handler" funkcija - koja omotava "notFound" helper funkciju
+	// nakon toga, postavljamo je kao "custom handler" za "404 Not Found" odgovore
+	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.notFound(w)
+	})
 
 	// kreiranje "file" servera - za fajlove iz "ui/static" foldera
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	// sada je "file" server uvezan sa handler-om, koji pokriva sve putanje koje počinju sa "/static/"
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
-	mux.HandleFunc("/", app.home)
+	router.HandlerFunc(http.MethodGet, "/", app.home)
 	// obje naredne putanje su fiksne putanje
 	// ne završavaju se sa "/"
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
+	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
+	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreatePost)
+	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
 
 	// izvršavanje svih "middleware"-a dok se ne dođe do "router"-a
 	// stara verzija - app.recoverPanic(app.loqRequest(secureHeaders(mux)))
@@ -45,7 +53,7 @@ func (app *application) routes() http.Handler {
 	*/
 	standard := alice.New(app.recoverPanic, app.loqRequest, secureHeaders)
 	// metodu "then" dodajemo na kraju i njen parametar je router
-	return standard.Then(mux)
+	return standard.Then(router)
 }
 
 // ukoliko se odradi "return" prije narednog poziva "next.ServeHTTP()" - onda se prekida lanac izvršavanja

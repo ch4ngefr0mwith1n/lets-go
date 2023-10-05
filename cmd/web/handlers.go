@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"snippetbox.lazarmrkic.com/internal/models"
 	"strconv"
@@ -10,12 +11,7 @@ import (
 
 // "home" handler će postati metoda "application" struct-a:
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	// "/" putanja ne treba da "hvata" sve zahtjeve
-	if r.URL.Path != "/" {
-		app.notFound(w)
-		return
-	}
-
+	// novi "httprouter" tačno ubada "/" putanju, pa zbog toga uklanjamo "r.URL.Path != "/" provjeru
 	snippets, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, r, err)
@@ -34,8 +30,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 // "snippetView" handler će postati metoda "application" struct-a:
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-	// vadi se vrijednost "id" parametra iz URL-a
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	// prilikom parsiranja request-ova u "httprouter", vrijednost svih imenovanih elemenataće biti sačuvana u "request" kontekstu
+	// za sada je dovoljno da koristimo "ParamsFromContext()" funkciju da izvadimo "slice" koji sadrži nazive i vrijednosti ovih parametara
+	params := httprouter.ParamsFromContext(r.Context())
+
+	// koristićemo "params.byName()" metodu da izvadimo vrijednosti "id" imenovanog parametra iz gornjeg "slice"-a
+	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil || id < 1 {
 		app.notFound(w)
 		return
@@ -57,15 +57,13 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
 
-// "snippetCreate" handler će postati metoda "application" struct-a:
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	// po default-u, "status code" koji se šalje je "200 OK"
-	if r.Method != "POST" {
-		w.Header().Set("Allow", "POST")
-		app.clientError(w, http.StatusMethodNotAllowed)
-		return
-	}
+	w.Write([]byte("Display the form for creating a new snippet..."))
+}
 
+// "snippetCreate" handler će postati metoda "application" struct-a:
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+	// sad kad smo uveli novi "router", nema potrebe da provjeravamo da li je u pitanju POST request metoda
 	title := "0 snail"
 	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
 	expires := 7
@@ -77,5 +75,6 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+	// "redirect" putanja mora da se ažurira, kako bi se koristio novi, čistiji URL format
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
