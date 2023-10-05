@@ -65,9 +65,34 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 // "snippetCreate" handler će postati metoda "application" struct-a:
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	// sad kad smo uveli novi "router", nema potrebe da provjeravamo da li je u pitanju POST request metoda
-	title := "0 snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := 7
+
+	// ograničenje za veličinu podataka unutar forme:
+	r.Body = http.MaxBytesReader(w, r.Body, 4096)
+
+	// parsiranje forme iz "request"-a i provjera da li postoje neke greške
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// vadimo "title" i "content" iz "r.PostForm" mape
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+	// ukoliko trebamo da vadimo više vrijednosti odjednom (checkbox i slično), onda to možemo da odradimo preko petlje
+	/*
+		for i, item := range r.PostForm["items"] {
+			fmt.Fprintf(w, "%d: Item %s\n", i, item)
+		}
+	*/
+
+	// "r.PostForm.Get()" metoda uvijek vraća podatke iz forme u vidu String-a
+	// međutim, u našem konkretnom slučaju - vrijednost za "expired" mora biti "integer" i zbog toga vršimo provjeru
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
 
 	// prosljeđivanje podataka ka bazi
 	id, err := app.snippets.Insert(title, content, expires)
