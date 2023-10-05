@@ -6,18 +6,20 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"snippetbox.lazarmrkic.com/internal/models"
+	"snippetbox.lazarmrkic.com/internal/validator"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 )
 
 // ovaj "struct" predstavlja podatke unutar forme i greške tokom validacije za njena polja
 // sva njegova polja su u Pascal case, zato što moraju biti eksportovana - kako bi ih "html/template" paket pročitao prilikom renderovanja
 type snippetCreateForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors map[string]string
+	Title   string
+	Content string
+	Expires int
+	// obrisaćemo "fieldErrors" polje
+	// umjesto njega, "ugradićemo" Validator struct
+	// to znači da će "snippetCreateForm" naslijediti sva polja i metode unutar njega
+	validator.Validator
 }
 
 // "home" handler će postati metoda "application" struct-a:
@@ -105,10 +107,9 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	// instanca "snippetCreateForm" struct-a
 	// ona će sadržati vrijednosti iz forme i praznu mapu - koja treba biti popunjavana greškama prilikom validacije
 	form := snippetCreateForm{
-		Title:       r.PostForm.Get("title"),
-		Content:     r.PostForm.Get("content"),
-		Expires:     expires,
-		FieldErrors: map[string]string{},
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
 	}
 
 	// ukoliko trebamo da vadimo više vrijednosti odjednom (checkbox i slično) preko "r.PostForm()", onda to možemo da odradimo preko petlje
@@ -120,30 +121,20 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	// odličan blog post koji sadrži generalne metode za validaciju:
 	// https://www.alexedwards.net/blog/validation-snippets-for-go#email-validation
-	// provjera:
-	if strings.TrimSpace(form.Title) == "" {
-		form.FieldErrors["title"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(form.Title) > 100 {
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
-	}
-
-	if strings.TrimSpace(form.Content) == "" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	}
-
-	if form.Expires != 1 && form.Expires != 7 && form.Expires != 365 {
-		form.FieldErrors["expires"] = "This field must equal 1, 7 or 365"
-	}
+	// validacija:
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
 	// ukoliko neke od grešaka postoje, onda treba nanovo prikazati "create.tmpl" templejt
 	// dinamički podaci će biti proslijeđeni u "Form" polje
 	// takođe, treba poslati 402 HTTP status kod - koji pokazuje da je došlo do greške prilikom validacije
-	if len(form.FieldErrors) > 0 {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
 		return
-
 	}
 
 	// prosljeđivanje podataka ka bazi
