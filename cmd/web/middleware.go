@@ -15,3 +15,19 @@ func secureHeaders(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// ovoće biti metoda nad "application" struct-om
+// razlog - zato što tako ima pristup njegovim zavisnostima, uključujući i "structured logger"
+func (app *application) loqRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var (
+			ip     = r.RemoteAddr
+			method = r.Method
+			proto  = r.Proto
+			uri    = r.URL.RequestURI()
+		)
+
+		app.logger.Info("received request:", "ip", ip, "method", method, "proto", proto, "uri", uri)
+		next.ServeHTTP(w, r)
+	})
+}
