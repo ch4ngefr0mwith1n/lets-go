@@ -27,6 +27,7 @@ func (app *application) loqRequest(next http.Handler) http.Handler {
 			uri    = r.URL.RequestURI()
 		)
 
+		// ovdje je napravljena veza sa "structured logger"-om:
 		app.logger.Info("received request:", "ip", ip, "method", method, "proto", proto, "uri", uri)
 		next.ServeHTTP(w, r)
 	})
