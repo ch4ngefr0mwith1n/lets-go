@@ -1,6 +1,9 @@
 package main
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -16,7 +19,7 @@ func secureHeaders(next http.Handler) http.Handler {
 	})
 }
 
-// ovoće biti metoda nad "application" struct-om
+// ovo će biti metoda nad "application" struct-om
 // razlog - zato što tako ima pristup njegovim zavisnostima, uključujući i "structured logger"
 func (app *application) loqRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +32,24 @@ func (app *application) loqRequest(next http.Handler) http.Handler {
 
 		// ovdje je napravljena veza sa "structured logger"-om:
 		app.logger.Info("received request:", "ip", ip, "method", method, "proto", proto, "uri", uri)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) recoverPanic(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// kreira se funkcija sa odloženim izvršavanjem
+		// ona će uvijek da se izvršava u "panic" slučaju, kako Golang bude "odmotavao" svoj stack
+		defer func() {
+			// pozivom "recover" funkcije provjeravamo da li se desio "panic" ili ne
+			if err := recover(); err != nil {
+				// "Connection: close" header se stavlja na odgovor
+				// kada se ovaj header podesi, Golang HTTP server će automatski da zatvori trenutnu konekciju
+				w.Header().Set("Connection", "close")
+				// vraćanje "500 Internal Server" odgovora
+				app.serverError(w, r, fmt.Errorf("%s", err))
+			}
+		}()
 		next.ServeHTTP(w, r)
 	})
 }
