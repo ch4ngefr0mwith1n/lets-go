@@ -2,7 +2,7 @@ package main
 
 import "net/http"
 
-// request-ovi će biti proslijeđeni na sledeći šablon "secureHeaders → servemux → application handler"
+// request-ovi u prvobitnoj verziji će biti proslijeđeni na sledeći šablon "secureHeaders → servemux → application handler"
 // kada se vrati zadnji "handler" u lancu, onda se kontrola vraća nazad - u kontra smjeru
 // secureHeaders → servemux → application handler → servemux → secureHeaders
 /*
@@ -30,7 +30,8 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/snippet/view", app.snippetView)
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
-	return secureHeaders(mux)
+	// "logRequest" middleware treba prvi da se izvrši, a nakon njega će ići "secureHeaders", "router" pa "handler"-i
+	return app.loqRequest(secureHeaders(mux))
 }
 
 // ukoliko se odradi "return" prije narednog poziva "next.ServeHTTP()" - onda se prekida lanac izvršavanja
