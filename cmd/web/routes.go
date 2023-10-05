@@ -1,6 +1,9 @@
 package main
 
-import "net/http"
+import (
+	"github.com/justinas/alice"
+	"net/http"
+)
 
 // request-ovi u prvobitnoj verziji će biti proslijeđeni na sledeći šablon "secureHeaders → servemux → application handler"
 // kada se vrati zadnji "handler" u lancu, onda se kontrola vraća nazad - u kontra smjeru
@@ -31,7 +34,18 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
 	// izvršavanje svih "middleware"-a dok se ne dođe do "router"-a
-	return app.recoverPanic(app.loqRequest(secureHeaders(mux)))
+	// stara verzija - app.recoverPanic(app.loqRequest(secureHeaders(mux)))
+
+	// korišćenje "justinas/alice" paketa za nadovezivanje "middleware"-a
+	// ima fleksibilnije slučajeve korišćenja
+	/*
+		myChain := alice.New(myMiddlewareOne, myMiddlewareTwo)
+		myOtherChain := myChain.Append(myMiddleware3)
+		return myOtherChain.Then(myHandler)
+	*/
+	standard := alice.New(app.recoverPanic, app.loqRequest, secureHeaders)
+	// metodu "then" dodajemo na kraju i njen parametar je router
+	return standard.Then(mux)
 }
 
 // ukoliko se odradi "return" prije narednog poziva "next.ServeHTTP()" - onda se prekida lanac izvršavanja
