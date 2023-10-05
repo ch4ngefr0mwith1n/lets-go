@@ -30,8 +30,8 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/snippet/view", app.snippetView)
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
-	// "logRequest" middleware treba prvi da se izvrši, a nakon njega će ići "secureHeaders", "router" pa "handler"-i
-	return app.loqRequest(secureHeaders(mux))
+	// izvršavanje svih "middleware"-a dok se ne dođe do "router"-a
+	return app.recoverPanic(app.loqRequest(secureHeaders(mux)))
 }
 
 // ukoliko se odradi "return" prije narednog poziva "next.ServeHTTP()" - onda se prekida lanac izvršavanja
