@@ -65,8 +65,18 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// BITNO - naredni kod više nije potreban, pokriven je u "newTemplateData" metodi
+	// "snippetView" handler treba da učita "flash" poruku (ukoliko ona postoji za trenutnog korisnika)
+	// i nakon toga, da je proslijedi odgovarajućem HTML templejtu
+	// pošto se ova poruka prikazuje samo jednom - potrebno ju je učitati i ukloniti nakon toga
+	// zbog toga koristimo "PopString()" metodu
+	//flash := app.sessionManager.PopString(r.Context(), "flash")
+	// ukoliko želimo da ostavimo vrijednost unutar "session data", onda nam je dovoljna metoda "GetString()"
+
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
+
+	//data.Flash = flash
 
 	app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
@@ -130,6 +140,11 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		app.serverError(w, r, err)
 		return
 	}
+
+	// preko "Put()" metode dodajemo string vrijednost i odgovarajući ključ ("flash")
+	// "r.Context()" označava trenutni "request context"
+	// gruba definicija - nešto gdje "session manager" PRIVREMENO čuva informacije, dok "handler"-i upravljaju zahtjevima
+	app.sessionManager.Put(r.Context(), "flash", "Snippet successfully created!")
 
 	// "redirect" putanja mora da se ažurira, kako bi se koristio novi, čistiji URL format
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
