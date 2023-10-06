@@ -34,12 +34,19 @@ func (app *application) routes() http.Handler {
 	// sada je "file" server uvezan sa handler-om, koji pokriva sve putanje koje počinju sa "/static/"
 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
-	router.HandlerFunc(http.MethodGet, "/", app.home)
+	// određene putanje moramo da "omotamo" sa "SessionManager.LoadAndSave()" metodom
+	// ovaj middleware automatski snima i učitava podatke o sesiji sa svakim novim HTTP zahtjevom i odgovorom
+	// međutim, neće biti potrebe da ga dodajemo na svaku putanju
+	dynamic := alice.New(app.sessionManager.LoadAndSave)
+
+	// BITNO:
+	// "ThenFunc()" metoda vraća http.Handler (a ne "http.HandlerFunc")
+	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
 	// obje naredne putanje su fiksne putanje
 	// ne završavaju se sa "/"
-	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
-	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
-	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
+	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
+	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
+	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
 
 	// izvršavanje svih "middleware"-a dok se ne dođe do "router"-a
 	// stara verzija - app.recoverPanic(app.loqRequest(secureHeaders(mux)))
