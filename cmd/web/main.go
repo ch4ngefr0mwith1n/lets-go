@@ -98,10 +98,15 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
+	srv := &http.Server{
+		Addr:    *addr,
+		Handler: app.routes(),
+	}
+
 	// logger obavještava da će server biti pokrenut
 	logger.Info(fmt.Sprintf("Starting server on port %s", *addr))
-	// u parametre idu adresa iz "flag"-a i router
-	err = http.ListenAndServe(*addr, app.routes())
+	// novi način za pokretanje servera:
+	err = srv.ListenAndServe()
 	// u slučaju da se desi neka greška - aplikacija će biti izgašena
 	logger.Error(err.Error())
 	os.Exit(1)
