@@ -13,13 +13,14 @@ import (
 // ovaj "struct" predstavlja podatke unutar forme i greške tokom validacije za njena polja
 // sva njegova polja su u Pascal case, zato što moraju biti eksportovana - kako bi ih "html/template" paket pročitao prilikom renderovanja
 type snippetCreateForm struct {
-	Title   string
-	Content string
-	Expires int
+	// moramo da dodamo "struct" tagove, kako bi se vrijednosti iz HTML forme pravilno mapirale u različita polja struct-a
+	Title   string `form:"title"`
+	Content string `form:"content"`
+	Expires int    `form:"expires"`
 	// obrisaćemo "fieldErrors" polje
 	// umjesto njega, "ugradićemo" Validator struct
 	// to znači da će "snippetCreateForm" naslijediti sva polja i metode unutar njega
-	validator.Validator
+	validator.Validator `form:"-"`
 }
 
 // "home" handler će postati metoda "application" struct-a:
@@ -31,13 +32,13 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Call the newTemplateData() helper to get a templateData struct containing
-	// the 'default' data (which for now is just the current year), and add the
-	// snippets slice to it.
+	// pozivanje "newTemplateData()" helper metode, kako bi se dobio "templateData" struct
+	// on sadrži "default" podatke (za sada, samo trenutnu godinu)
+	// nakon toga, dodaje se "snippets" slice u njega
 	data := app.newTemplateData(r)
 	data.Snippets = snippets
 
-	// Pass the data to the render() helper as normal.
+	// prosljeđivanje podataka u "render()" helper funkciju
 	app.render(w, r, http.StatusOK, "home.tmpl", data)
 }
 
@@ -87,37 +88,23 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	// sad kad smo uveli novi "router", nema potrebe da provjeravamo da li je u pitanju POST request metoda
 
 	// ograničenje za veličinu podataka unutar forme:
-	r.Body = http.MaxBytesReader(w, r.Body, 4096)
+	//r.Body = http.MaxBytesReader(w, r.Body, 4096)
 
-	// parsiranje forme iz "request"-a i provjera da li postoje neke greške
-	err := r.ParseForm()
+	// (STARI NAČIN) parsiranje forme iz "request"-a i provjera da li postoje neke greške
+	//err := r.ParseForm()
+	//if err != nil {
+	//	app.clientError(w, http.StatusBadRequest)
+	//	return
+	//}
+
+	// popunjavanje "snippetCreateForm" struct-a skupa sa "expires"/"title"/"content" poljima na sledeći način:
+	var form snippetCreateForm
+	err := app.decodePostForm(r, &form)
+	//err = app.formDecoder.Decode(&form, r.PostForm)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-
-	// "r.PostForm.Get()" metoda uvijek vraća podatke iz forme u vidu String-a
-	// međutim, u našem konkretnom slučaju - vrijednost za "expired" mora biti "integer" i zbog toga vršimo provjeru
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-
-	// instanca "snippetCreateForm" struct-a
-	// ona će sadržati vrijednosti iz forme i praznu mapu - koja treba biti popunjavana greškama prilikom validacije
-	form := snippetCreateForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
-	}
-
-	// ukoliko trebamo da vadimo više vrijednosti odjednom (checkbox i slično) preko "r.PostForm()", onda to možemo da odradimo preko petlje
-	/*
-		for i, item := range r.PostForm["items"] {
-			fmt.Fprintf(w, "%d: Item %s\n", i, item)
-		}
-	*/
 
 	// odličan blog post koji sadrži generalne metode za validaciju:
 	// https://www.alexedwards.net/blog/validation-snippets-for-go#email-validation
