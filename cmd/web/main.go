@@ -4,11 +4,14 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	// go get github.com/go-sql-driver/mysql
 	// potreban nam je ovaj import radi "init" funkcije sadržane unutar njega
@@ -24,8 +27,9 @@ type application struct {
 	// to će omogućiti da "SnippetModel" objekat bude dostupan kontrolerima
 	snippets *models.SnippetModel
 	// dodavanje templateCache polja
-	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 // funkcija za inicijalizovanje "connection pool"-a
@@ -75,6 +79,13 @@ func main() {
 	// nova instanca "decoder"-a:
 	formDecoder := form.NewDecoder()
 
+	// inicijalizacija novog "session manager"-a
+	sessionManager := scs.New()
+	// nakon toga, podešavamo MySQL bazu da služi kao "session store"
+	sessionManager.Store = mysqlstore.New(db)
+	// i zadnje, podešavamo sesije tako da traju 12 sati nakon vremena kreiranja
+	sessionManager.Lifetime = 12 * time.Hour
+
 	app := &application{
 		logger: logger,
 		// inicijalizovanje "models.SnippetModel" instance, koja sadrži "connection pool"
@@ -83,7 +94,8 @@ func main() {
 		// inicijalizovanje "template cache"-a
 		templateCache: templateCache,
 		// dodavanje instance "decoder"-a u "application" zavisnosti:
-		formDecoder: formDecoder,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	// logger obavještava da će server biti pokrenut
