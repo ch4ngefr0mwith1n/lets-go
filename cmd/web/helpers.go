@@ -42,7 +42,9 @@ func (app *application) notFound(w http.ResponseWriter) {
 func (app *application) newTemplateData(r *http.Request) templateData {
 	return templateData{
 		CurrentYear: time.Now().Year(),
-		// Add the flash message to the template data, if one exists.
+		// dodavanje "flash" poruke u "template data", ukoliko ona postoji
+		// ovaj šablon može da se koristi za sve vrste poruka
+		// uglavnom, kad se izvrši redirekcija na stranicu, "flash" poruka će automatski biti prikazana
 		Flash: app.sessionManager.PopString(r.Context(), "flash"),
 	}
 }
