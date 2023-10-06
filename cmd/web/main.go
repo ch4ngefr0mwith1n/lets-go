@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"github.com/go-playground/form/v4"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -24,6 +25,7 @@ type application struct {
 	snippets *models.SnippetModel
 	// dodavanje templateCache polja
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 // funkcija za inicijalizovanje "connection pool"-a
@@ -70,6 +72,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// nova instanca "decoder"-a:
+	formDecoder := form.NewDecoder()
+
 	app := &application{
 		logger: logger,
 		// inicijalizovanje "models.SnippetModel" instance, koja sadrži "connection pool"
@@ -77,6 +82,8 @@ func main() {
 		snippets: &models.SnippetModel{DB: db},
 		// inicijalizovanje "template cache"-a
 		templateCache: templateCache,
+		// dodavanje instance "decoder"-a u "application" zavisnosti:
+		formDecoder: formDecoder,
 	}
 
 	// logger obavještava da će server biti pokrenut
