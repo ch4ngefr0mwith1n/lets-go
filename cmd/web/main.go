@@ -27,6 +27,8 @@ type application struct {
 	// dodavanje "snippets" polja u "application" struct
 	// to će omogućiti da "SnippetModel" objekat bude dostupan kontrolerima
 	snippets *models.SnippetModel
+	// dodavanje "users" polja
+	users *models.UserModel
 	// dodavanje templateCache polja
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
@@ -95,6 +97,8 @@ func main() {
 		// inicijalizovanje "models.SnippetModel" instance, koja sadrži "connection pool"
 		// nakon toga, dodajemo je u zavisnosti aplikacije
 		snippets: &models.SnippetModel{DB: db},
+		// isti pristup i sa "users"
+		users: &models.UserModel{DB: db},
 		// inicijalizovanje "template cache"-a
 		templateCache: templateCache,
 		// dodavanje instance "decoder"-a u "application" zavisnosti:
