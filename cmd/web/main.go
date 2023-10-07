@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -101,12 +102,19 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
+	// modifikacija za "TLS elliptic curves" - koje se koriste prilikom TLS "handshake"-a
+	// na ovaj način smanjujemo opterećenje servera
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	srv := &http.Server{
 		Addr:    *addr,
 		Handler: app.routes(),
 		// ne možemo direktno da koristimo naš već postojeći "structured logger" handler
 		// moramo da ga prebacimo u "*log.Logger", koji upisuje logove na određenom, fiksnom nivou
-		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		ErrorLog:  slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		TLSConfig: tlsConfig,
 	}
 
 	// logger obavještava da će server biti pokrenut
