@@ -101,6 +101,9 @@ func main() {
 	srv := &http.Server{
 		Addr:    *addr,
 		Handler: app.routes(),
+		// ne možemo direktno da koristimo naš već postojeći "structured logger" handler
+		// moramo da ga prebacimo u "*log.Logger", koji upisuje logove na određenom, fiksnom nivou
+		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
 
 	// logger obavještava da će server biti pokrenut
