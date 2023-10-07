@@ -21,7 +21,7 @@ func secureHeaders(next http.Handler) http.Handler {
 
 // ovo će biti metoda nad "application" struct-om
 // razlog - zato što tako ima pristup njegovim zavisnostima, uključujući i "structured logger"
-func (app *application) loqRequest(next http.Handler) http.Handler {
+func (app *application) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
 			ip     = r.RemoteAddr

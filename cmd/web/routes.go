@@ -48,8 +48,14 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
 	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
 
+	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
+	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignupPost))
+	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
+	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
+	router.Handler(http.MethodPost, "/user/logout", dynamic.ThenFunc(app.userLogoutPost))
+
 	// izvršavanje svih "middleware"-a dok se ne dođe do "router"-a
-	// stara verzija - app.recoverPanic(app.loqRequest(secureHeaders(mux)))
+	// stara verzija - app.recoverPanic(app.logRequest(secureHeaders(mux)))
 
 	// korišćenje "justinas/alice" paketa za nadovezivanje "middleware"-a
 	// ima fleksibilnije slučajeve korišćenja
@@ -58,7 +64,7 @@ func (app *application) routes() http.Handler {
 		myOtherChain := myChain.Append(myMiddleware3)
 		return myOtherChain.Then(myHandler)
 	*/
-	standard := alice.New(app.recoverPanic, app.loqRequest, secureHeaders)
+	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	// metodu "then" dodajemo na kraju i njen parametar je router
 	return standard.Then(router)
 }
