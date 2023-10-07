@@ -9,11 +9,13 @@ import (
 
 type Validator struct {
 	FieldErrors map[string]string
+	// u ovom polju ćemo čuvati greške prilikom validacije koje nisu vezane za polja unutar forme
+	NonFieldErrors []string
 }
 
 // provjera da "FieldErrors" mapa ne sadrži nijedan unos:
 func (v *Validator) Valid() bool {
-	return len(v.FieldErrors) == 0
+	return len(v.FieldErrors) == 0 && len(v.NonFieldErrors) == 0
 }
 
 // metoda za dodavanje "error" poruke u "FieldErrors" mapu
@@ -34,6 +36,11 @@ func (v *Validator) CheckField(ok bool, key, message string) {
 	if !ok {
 		v.AddFieldErrorKey(key, message)
 	}
+}
+
+// "helper" metoda za dodavanje "error" poruka u "NonFieldsErrors" slice
+func (v *Validator) AddNonFieldError(message string) {
+	v.NonFieldErrors = append(v.NonFieldErrors, message)
 }
 
 func NotBlank(value string) bool {
