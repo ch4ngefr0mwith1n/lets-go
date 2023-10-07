@@ -85,6 +85,9 @@ func main() {
 	sessionManager.Store = mysqlstore.New(db)
 	// i zadnje, podešavamo sesije tako da traju 12 sati nakon vremena kreiranja
 	sessionManager.Lifetime = 12 * time.Hour
+	// nakon što smo ubacili TLS sertifikat, sada moramo da postavimo "Secure" atribut na "session cookies"
+	// to znači da će "cookie" biti poslat iz korisničkog browsera samo prilikom korišćenja HTTPS konekcije
+	sessionManager.Cookie.Secure = true
 
 	app := &application{
 		logger: logger,
@@ -108,8 +111,9 @@ func main() {
 
 	// logger obavještava da će server biti pokrenut
 	logger.Info(fmt.Sprintf("Starting server on port %s", *addr))
-	// novi način za pokretanje servera:
-	err = srv.ListenAndServe()
+	// koristićemo novu metodu za pokretanje HTTPS servera
+	// moramo da proslijedimo "public" i "private" key kao parametre
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	// u slučaju da se desi neka greška - aplikacija će biti izgašena
 	logger.Error(err.Error())
 	os.Exit(1)
