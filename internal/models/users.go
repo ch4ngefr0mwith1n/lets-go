@@ -49,7 +49,33 @@ func (m *UserModel) Insert(name string, email string, password string) error {
 }
 
 func (m *UserModel) Authenticate(email string, password string) (int, error) {
-	return 0, nil
+	// prvo trebamo da izvadimo "mail" i "hashed_password" koji su povezani sa "email" string-om
+	var id int
+	var hashedPassword []byte
+
+	stmt := "SELECT id, hashed_password FROM users WHERE email = ?"
+
+	err := m.DB.QueryRow(stmt, email).Scan(&id, &hashedPassword)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+
+	// sada provjeravamo da li se poklapaju "hashed password" i "plain-text password"
+	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+
+	// ukoliko nema grešaka, onda vraćamo "user ID"
+	return id, nil
 }
 
 func (m *UserModel) Exists(id int) (bool, error) {
