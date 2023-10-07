@@ -115,6 +115,24 @@ func main() {
 		// moramo da ga prebacimo u "*log.Logger", koji upisuje logove na određenom, fiksnom nivou
 		ErrorLog:  slog.NewLogLogger(logger.Handler(), slog.LevelError),
 		TLSConfig: tlsConfig,
+		// GoLang omogućava "keep-alive" na svim prihvaćenim konekcijama
+		// konekcija između klijenta i servera će biti otvorena određenno vrijeme
+		// klijent može koristi istu konekciju za više zahtjeva, bez potrebe za ponavljanjem TLS "handshake"-ova
+		// dužina "keep-alive" konekcije zavisi od OS-a kog koristimo, ne možemo da je povećamo
+		// međutim, možemo da je smanjimo preko "idleTimeout"
+		IdleTimeout: time.Minute,
+		// ukoliko se "request headers" ili "request body" učitavaju i obrađuju duže od 5 sekundi nakon prihvatanja zahtjeva, Golang će zatvoriti konekciju
+		// ovo je "hard closure" sa serverske strane, pa korisnik neće dobiti nikakav HTTP(S) odgovor
+		// na ovaj način se smanjuje rizik od "slow client" napada, poput Slowloris-a (veza bi bila otvorena non-stop, zbog slanja nepotpunih HTTP(S) zahtjeva)
+		// BITNO:
+		// ukoliko postavimo vrijednost za "ReadTimeout", a eksplicitno ne postavimo "IdleTimeout" - onda će njihove vrijednosti biti jednake
+		ReadTimeout: 5 * time.Second,
+		// "WriteTimeout" uvijek mora da ima veću vrijednost od "ReadTimeout"-a (učitavanje "request"-a, pa ispisivanje "response"-a)
+		// to je zato što se u HTTPS vrijeme računa od prihvatanja zahtjeva (kod HTTP-a se računa od učitavanja "request header"-a)
+		WriteTimeout: 10 * time.Second,
+		// vrijeme potrebno za učitavanje "header"-a
+		// učitavanje "request body"-ja može da traje duže od ovoga, bez zatvaranja konekcije
+		ReadHeaderTimeout: 3 * time.Second,
 	}
 
 	// logger obavještava da će server biti pokrenut
