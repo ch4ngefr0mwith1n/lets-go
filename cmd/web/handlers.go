@@ -185,7 +185,27 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintln(w, "Creating a new user...")
+	// dodavanje novog korisnika u bazu
+	// ukoliko korisnik sa datim mejlom već postoji, onda treba prikazati "error message" na formi i ponovo je izrenderovati
+	err = app.users.Insert(form.Name, form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrDuplicateEmail) {
+			form.AddFieldErrorKey("email", "Email address is already in use")
+
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, r, http.StatusUnprocessableEntity, "signup.tmpl", data)
+		} else {
+			app.serverError(w, r, err)
+		}
+	}
+
+	// ako je dodavanje prošlo OK, onda treba dodati "flash" poruku u sesiju, kako bi se potvrdilo da je "sign-up" prošao
+	app.sessionManager.Put(r.Context(), "flash", "Your sign-up was successful. Please log in.")
+	// nakon ovoga, vrši se redirekcija ka "login" stranici
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+
+	return
 }
 
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
