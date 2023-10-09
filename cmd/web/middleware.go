@@ -53,3 +53,20 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// želimo da izbjegnemo situaciju da korisnik koji nije ulogovan može da kreira "snippet"
+// a generalno, trebanam neki "middleware" koji ograničava pristup rutama
+func (app *application) requireAuthentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// ukoliko korisnik nije ulogovan, trebamo ga preusmjeravati na "login" stranicu
+		// nakon toga, treba izaći iz "middleware" lanca
+		if !app.isAuthenticated(r) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		}
+
+		// BITNO:
+		// stranice koje zahtjevaju da korisnik bude ulogovan NE SMIJU biti sačuvane unutar "cache"-a u browser-u
+		w.Header().Add("Cache-Control", "no-store")
+		next.ServeHTTP(w, r)
+	})
+}

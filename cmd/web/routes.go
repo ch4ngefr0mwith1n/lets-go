@@ -45,14 +45,18 @@ func (app *application) routes() http.Handler {
 	// obje naredne putanje su fiksne putanje
 	// ne završavaju se sa "/"
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
-	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
-	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
-
 	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
 	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignupPost))
 	router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
 	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
-	router.Handler(http.MethodPost, "/user/logout", dynamic.ThenFunc(app.userLogoutPost))
+
+	// rute koje traže ulogovanog korisnika su obje rute oko kreiranja "snippet"-a i ruta za "logout"
+	// "requireAuthentication" će biti nadovezan na već postojeći "middleware" (tj. "LoadAndSave")
+	protected := dynamic.Append(app.requireAuthentication)
+
+	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.snippetCreate))
+	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.snippetCreatePost))
+	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
 
 	// izvršavanje svih "middleware"-a dok se ne dođe do "router"-a
 	// stara verzija - app.recoverPanic(app.logRequest(secureHeaders(mux)))
