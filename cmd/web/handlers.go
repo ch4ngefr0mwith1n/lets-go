@@ -272,6 +272,20 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
+// kako bismo izlogovali korisnika, dovoljno je da samo uklonimo "authenticatedUserID" vrijednost iz sesije
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Logout the user...")
+	// za svaki slučaj osvježavamo "Session ID"
+	err := app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	// nakon toga, brišemo "authenticatedUserID" iz "session data", kako bismo izlogovali korisnika
+	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
+	// prikaz "flash" poruke, kako bismo obavjestili korisnika da je izlogovan
+	app.sessionManager.Put(r.Context(), "flash", "You've been successfully logged out!")
+
+	// preusmjeravanje ka "home" stranici
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
