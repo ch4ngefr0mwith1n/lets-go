@@ -14,6 +14,8 @@ type templateData struct {
 	Snippets    []models.Snippet
 	Form        any
 	Flash       string
+	// na osnovu ovog polja će se prikazivati odgovarajući Login screen ("Authenticated" / "Not authenticated")
+	IsAuthenticated bool
 }
 
 // Create a humanDate function which returns a nicely formatted string
