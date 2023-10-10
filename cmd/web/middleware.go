@@ -82,9 +82,13 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 func noSurf(next http.Handler) http.Handler {
 	csrfHandler := nosurf.New(next)
 	csrfHandler.SetBaseCookie(http.Cookie{
-		HttpOnly: false,
-		Path:     "",
-		Secure:   false,
+		// ovom "cookie"-ju se može pristupiti samo preko HTTP "request"-ova (ne može preko Javascript-a)
+		HttpOnly: true,
+		// putanja na kojoj je "cookie" validan
+		// pošto je ona podešena na "root" - to znači da će se slati sa svim "request"-ovima ka sajtu
+		Path: "/",
+		// "cookie" treba da se šalje samo preko "HTTPS"-a
+		Secure: true,
 	})
 
 	return csrfHandler

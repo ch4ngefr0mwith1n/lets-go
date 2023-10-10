@@ -16,6 +16,11 @@ type templateData struct {
 	Flash       string
 	// na osnovu ovog polja će se prikazivati odgovarajući Login screen ("Authenticated" / "Not authenticated")
 	IsAuthenticated bool
+	// kako bi slanje formi bilo zaštićeno od CSRF, potrebna nam je "noSurf.Token()" metoda
+	// ona uzima "CSRF token" i dodaje ga u skriveno "csrf_token" polje unutar svake naše forme
+	// na kraju ćemo morati da "štelujemo" ovaj atribut u svim HTML poljima gdje je navedena funkcionalnost potrebna
+	// prvi korak je da dodamo "CSRFToken" polje u "templateData" struct
+	CSRFToken string
 }
 
 // Create a humanDate function which returns a nicely formatted string
