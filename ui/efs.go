@@ -11,5 +11,5 @@ import "embed"
 // odmah nakon kompajliranja programa, fajlovi iz "ui/static" foldera će biti sačuvani u "embedded" fajl sistemu
 // globalna promjenjiva "Files" referencira taj fajl sistem
 
-//go:embed "static"
+//go:embed "html" "static"
 var Files embed.FS
