@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/justinas/nosurf"
 	"net/http"
@@ -92,4 +93,42 @@ func noSurf(next http.Handler) http.Handler {
 	})
 
 	return csrfHandler
+}
+
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// vađenje "authenticatedUserID" vrijednosti iz sesije
+		id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+		// ukoliko ona ne postoji, vratiće se "0"
+		// u tom slučaju, biće proslijeđena originalna i nepromijenjena vrijednost "request"-a ka sledećem "handler"-u unutar lanca
+		if id == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// nakon toga, provjeravamo da li korisnik sa tim "ID"-em postoji u bazi
+		exists, err := app.users.Exists(id)
+		if err != nil {
+			app.serverError(w, r, err)
+			return
+		}
+
+		// ukoliko korisnik postoji, znamo da HTTP zahtjev dolazi od strane ulogovanog korisnika koji postoji u bazi
+		// kreiraćemo kopiju "Context" objekta, modifikovaćemo njenu vrijednost i dodjelićemo je u kopiju "request" objekta
+		// ctx := r.Context() - vadi se trenutni kontekst iz HTTP request-a
+		// ctx = context.WithValue(ctx, "isAuthenticated", true) - kreira se nova kopija već postojećeg konteksta
+		// r = r.WithContext(ctx) - kreiranje kopije već postojećeg "request"-a, koja sadrži naš novi "Context" objekat
+
+		// BITNO:
+		// vrijednostima "Context"-a možemo da pristupamo jedino tokom "lifetime"-a određenog "request"-a
+		if exists {
+			// metoda "userLoginPost" će dodati ovaj ključ uz odgovarajuću vrijednost nakon uspješnog "login"-a
+			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+			// modifikovanje "request"-a istim pristupom kao za "Context" objekat
+			r = r.WithContext(ctx)
+		}
+
+		// pozivanje sledećeg "handler"-a u lancu
+		next.ServeHTTP(w, r)
+	})
 }
