@@ -37,7 +37,9 @@ func (app *application) routes() http.Handler {
 	// određene putanje moramo da "omotamo" sa "SessionManager.LoadAndSave()" metodom
 	// ovaj middleware automatski snima i učitava podatke o sesiji sa svakim novim HTTP zahtjevom i odgovorom
 	// međutim, neće biti potrebe da ga dodajemo na svaku putanju
-	dynamic := alice.New(app.sessionManager.LoadAndSave)
+
+	// ubacićemo i "nosurf" middleware:
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
 
 	// BITNO:
 	// "ThenFunc()" metoda vraća http.Handler (a ne "http.HandlerFunc")

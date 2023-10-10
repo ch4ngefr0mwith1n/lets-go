@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-playground/form/v4"
+	"github.com/justinas/nosurf"
 	"net/http"
 	"runtime/debug"
 	"time"
@@ -51,6 +52,8 @@ func (app *application) newTemplateData(r *http.Request) templateData {
 		Flash: app.sessionManager.PopString(r.Context(), "flash"),
 		// Add the authentication status to the template data.
 		IsAuthenticated: app.isAuthenticated(r),
+		// dodavanje "CSRF token"-a
+		CSRFToken: nosurf.Token(r),
 	}
 }
 
