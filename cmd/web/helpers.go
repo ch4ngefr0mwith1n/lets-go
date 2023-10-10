@@ -37,9 +37,18 @@ func (app *application) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
 }
 
-// metoda koja vraća "true" ukoliko zahtjev dolazi od strane ulogovanog korisnika:
+// metoda koja vraća "true" ukoliko zahtjev dolazi od strane ulogovanog korisnika
+// ranije je provjeravala vrijednosti unutar "session data"
+// sada provjerava "request context"
 func (app *application) isAuthenticated(r *http.Request) bool {
-	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	// vrijednost unutar konteksta po "default"-u imaju "any" tip
+	// nakon što ih izvadimo, moraćemo da ih pretvorimo u njihov originalni tip
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+	if !ok {
+		return false
+	}
+
+	return isAuthenticated
 }
 
 // Create an newTemplateData() helper, which returns a pointer to a templateData

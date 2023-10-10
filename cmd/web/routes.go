@@ -39,12 +39,12 @@ func (app *application) routes() http.Handler {
 	// međutim, neće biti potrebe da ga dodajemo na svaku putanju
 
 	// ubacićemo i "nosurf" middleware:
-	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
 	// BITNO:
 	// "ThenFunc()" metoda vraća http.Handler (a ne "http.HandlerFunc")
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
-	// obje naredne putanje su fiksne putanje
+	// naredne putanje su fiksne putanje
 	// ne završavaju se sa "/"
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
 	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))

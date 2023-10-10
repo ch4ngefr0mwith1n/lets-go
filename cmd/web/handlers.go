@@ -36,7 +36,8 @@ type userLoginForm struct {
 	validator.Validator `form:"-"`
 }
 
-// "home" handler će postati metoda "application" struct-a:
+// BITNO:
+// svi "handler"-i trebaju da postanu metode "application" struct-a
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// novi "httprouter" tačno ubada "/" putanju, pa zbog toga uklanjamo "r.URL.Path != "/" provjeru
 	snippets, err := app.snippets.Latest()
