@@ -4,6 +4,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"net/http"
+	"snippetbox.lazarmrkic.com/ui"
 )
 
 // request-ovi u prvobitnoj verziji će biti proslijeđeni na sledeći šablon "secureHeaders → servemux → application handler"
@@ -30,9 +31,10 @@ func (app *application) routes() http.Handler {
 	})
 
 	// kreiranje "file" servera - za fajlove iz "ui/static" foldera
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	// biće prebačeni u "http.FS" tip, a na kraju se servira "file server HTTP handler"
+	fileServer := http.FileServer(http.FS(ui.Files))
 	// sada je "file" server uvezan sa handler-om, koji pokriva sve putanje koje počinju sa "/static/"
-	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
 	// određene putanje moramo da "omotamo" sa "SessionManager.LoadAndSave()" metodom
 	// ovaj middleware automatski snima i učitava podatke o sesiji sa svakim novim HTTP zahtjevom i odgovorom
